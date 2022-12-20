@@ -68,17 +68,37 @@ namespace AvanadeHealth.Controllers
             else
                 return Convert.ToString(valor);
         }
-
-
+        
         [HttpGet]
         [Route("/ListarEspecialidadePorId/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<Entidades.Especialidade>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AvanadeHealth.Entidades.Especialidade))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult ListarEspecialidadePorId(int id)
         {
             try
             {
-                return Ok(new Entidades.Especialidade());
+                SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
+                var dynamicParameters = new DynamicParameters();
+                dynamicParameters.Add("id", id);
+
+                AvanadeHealth.Entidades.Especialidade especialidade =
+                    connection.Query<AvanadeHealth.Entidades.Especialidade>(
+                        "SELECT [IdEspecialidade]" +
+                        "                 ,[Nome]" +
+                        "                 ,[Descrição]" +
+                        "                 ,[Ativo]" +
+                        "     FROM [dbo].[Especialidade]" +
+                        " where IdEspecialidade = @IdEspecialidade",
+                        dynamicParameters
+                        ).FirstOrDefault();
+                
+
+                if (especialidade == null || especialidade.IdEspecialidade == 0)
+                {
+                    return NoContent();
+                }
+
+                return Ok(especialidade);
             }
             catch (Exception ex)
             {
@@ -91,27 +111,44 @@ namespace AvanadeHealth.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
 
-        public IActionResult InserirEspecialidade(Entidades.Especialidade especialidade)
+        public IActionResult InserirEspecialidade(AvanadeHealth.Entidades.Especialidade especialidade)
         {
             try
             {
-                return Ok(new Entidades.Especialidade());
+                SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
+
+                int linhasAfetadas = connection.Execute(
+                    "INSERT INTO [dbo].[Especialidade] " +
+                    "([Nome], [Descrição], [Ativo] )" +
+                    "  VALUES (@Nome, @Descrição, @Ativo", especialidade);
+
+                return Ok(linhasAfetadas);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+
         }
 
         [HttpDelete]
         [Route("/ExcluirEspecialidade/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult ExcluirEspecialidade(Entidades.Especialidade especialidade)
+        public IActionResult ExcluirEspecialidade(int id)
         {
             try
             {
-                return Ok(new Entidades.Especialidade());
+                SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
+
+                var dynamicParameters = new DynamicParameters();
+                dynamicParameters.Add("IdEspecialidade", id);
+
+                int linhasAfetadas = connection.Execute(
+                    "DELETE FROM [dbo].[Especialidade] " +
+                    "WHERE Id = @Id", dynamicParameters);
+                
+                return Ok(linhasAfetadas);
             }
             catch (Exception ex)
             {
@@ -123,18 +160,25 @@ namespace AvanadeHealth.Controllers
         [Route("/AtualizarEspecialidade")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult AtualizarEspecialidade(Entidades.Especialidade especialidade)
+        public IActionResult AtualizarEspecialidade(AvanadeHealth.Entidades.Especialidade especialidade)
         {
             try
             {
-                return Ok(new Entidades.Especialidade());
+                SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
+
+                int linhasAfetadas = connection.Execute(
+                       "UPDATE [dbo].[Especialidade] " +
+                       "             SET ,[Nome] = @Nome" +
+                       "                 ,[Descrição] = @Descricao" +
+                       "                 ,[Ativo] = @Ativo" +
+                       " WHERE IdEspecialidade = @IdEspecialidade", especialidade);
+                return Ok(linhasAfetadas);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
+        
     }
 }
-
-  
