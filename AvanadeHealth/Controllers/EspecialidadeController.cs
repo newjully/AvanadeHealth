@@ -1,7 +1,9 @@
-﻿using Dapper;
+﻿using AvanadeHealth.Entidades;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Text;
+using static Dapper.SqlMapper;
 
 
 namespace AvanadeHealth.Controllers
@@ -36,7 +38,7 @@ namespace AvanadeHealth.Controllers
                     StringBuilder strComando = new StringBuilder();
                     strComando.AppendLine("SELECT [IdEspecialidade]");
                     strComando.AppendLine("                 ,[Nome]");
-                    strComando.AppendLine("                 ,[Descrição]");
+                    strComando.AppendLine("                 ,[Descricao]");
                     strComando.AppendLine("                 ,[Ativo]");
                     strComando.AppendLine("     FROM [dbo].[Especialidade]");
 
@@ -48,12 +50,13 @@ namespace AvanadeHealth.Controllers
                         especialides.Add(new Entidades.Especialidade()
                         {
                             IdEspecialidade = Convert.ToInt32(retornoSelect["IdEspecialidade"] ?? "0"),
-                            Nome = TratarNulo(retornoSelect["Nome"]),
-                            Descrição = TratarNulo(retornoSelect["Descrição"]),
-                            Ativo = Convert.ToBoolean(retornoSelect["Ativo"] == DBNull.Value ? false : retornoSelect["Inativo"])
+                            Nome = TratarNulo(retornoSelect["NOME"]),
+                            Descricao = TratarNulo(retornoSelect["DESCRICAO"]),
+                            Ativo = Convert.ToBoolean(retornoSelect["ATIVO"] == DBNull.Value ? false : retornoSelect["ATIVO"])
                         });
                     }
                 }
+            https://github.com/GrupoAgendamento/AgendamentoHospitalar
                 return Ok(especialides);
             }
             catch (Exception)
@@ -79,16 +82,16 @@ namespace AvanadeHealth.Controllers
             {
                 SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
                 var dynamicParameters = new DynamicParameters();
-                dynamicParameters.Add("id", id);
+                dynamicParameters.Add("@IDESPECIALIDADE", id);
 
                 AvanadeHealth.Entidades.Especialidade especialidade =
                     connection.Query<AvanadeHealth.Entidades.Especialidade>(
-                        "SELECT [IdEspecialidade]" +
-                        "                 ,[Nome]" +
-                        "                 ,[Descrição]" +
-                        "                 ,[Ativo]" +
+                        "SELECT [IDESPECIALIDADE]" +
+                        "                 ,[NOME]" +
+                        "                 ,[DESCRICAO]" +
+                        "                 ,[ATIVO]" +
                         "     FROM [dbo].[Especialidade]" +
-                        " where IdEspecialidade = @IdEspecialidade",
+                        " WHERE IDESPECIALIDADE = @IDESPECIALIDADE",
                         dynamicParameters
                         ).FirstOrDefault();
                 
@@ -111,7 +114,7 @@ namespace AvanadeHealth.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
 
-        public IActionResult InserirEspecialidade(AvanadeHealth.Entidades.Especialidade especialidade)
+        public IActionResult InserirEspecialidade(AvanadeHealth.Entidades.Especialidade entidades)
         {
             try
             {
@@ -119,9 +122,8 @@ namespace AvanadeHealth.Controllers
 
                 int linhasAfetadas = connection.Execute(
                     "INSERT INTO [dbo].[Especialidade] " +
-                    "([Nome], [Descrição], [Ativo] )" +
-                    "  VALUES (@Nome, @Descrição, @Ativo", especialidade);
-
+                    "([Nome], [Descricao], [Ativo] )" +
+                    "  VALUES (@Nome, @Descricao, @Ativo)", entidades);
                 return Ok(linhasAfetadas);
             }
             catch (Exception ex)
@@ -142,11 +144,11 @@ namespace AvanadeHealth.Controllers
                 SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
 
                 var dynamicParameters = new DynamicParameters();
-                dynamicParameters.Add("IdEspecialidade", id);
+                dynamicParameters.Add("@IdEspecialidade", id);
 
                 int linhasAfetadas = connection.Execute(
                     "DELETE FROM [dbo].[Especialidade] " +
-                    "WHERE Id = @Id", dynamicParameters);
+                    "WHERE IDESPECIALIDADE = @IdEspecialidade", dynamicParameters);
                 
                 return Ok(linhasAfetadas);
             }
@@ -160,18 +162,22 @@ namespace AvanadeHealth.Controllers
         [Route("/AtualizarEspecialidade")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult AtualizarEspecialidade(AvanadeHealth.Entidades.Especialidade especialidade)
+        public IActionResult AtualizarEspecialidade(AvanadeHealth.Entidades.Especialidade entidades)
         {
             try
             {
                 SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("SqlHealth"));
+                if (entidades.IdEspecialidade == 0)
+                {
+                    return BadRequest("IdEspecialidade não informado");
+                }
 
                 int linhasAfetadas = connection.Execute(
                        "UPDATE [dbo].[Especialidade] " +
-                       "             SET ,[Nome] = @Nome" +
-                       "                 ,[Descrição] = @Descricao" +
-                       "                 ,[Ativo] = @Ativo" +
-                       " WHERE IdEspecialidade = @IdEspecialidade", especialidade);
+                       "             SET[NOME] = @NOME" +
+                       "                 ,[DESCRICAO] = @DESCRICAO" +
+                       "                 ,[ATIVO] = @ATIVO" +
+                       " WHERE IDESPECIALIDADE = @IDESPECIALIDADE", entidades);
                 return Ok(linhasAfetadas);
             }
             catch (Exception ex)
