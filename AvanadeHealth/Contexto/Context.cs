@@ -7,13 +7,17 @@ namespace AvanadeHealth.Contexto;
 
 public partial class Context : DbContext
 {
+    private readonly IConfiguration _configuration;
+
+
     public Context()
     {
     }
 
-    public Context(DbContextOptions<Context> options)
+    public Context(DbContextOptions<Context> options, IConfiguration configuration)
         : base(options)
     {
+        _configuration = configuration;
     }
 
     public virtual DbSet<Agendamento> Agendamentos { get; set; }
@@ -31,8 +35,7 @@ public partial class Context : DbContext
     public virtual DbSet<Profissional> Profissionals { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=AvandeHealth;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False");
+        => optionsBuilder.UseSqlServer(_configuration.GetConnectionString("SqlHealth"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -180,7 +183,7 @@ public partial class Context : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("CNPJ");
-            entity.Property(e => e.Endereço).IsUnicode(false);
+            entity.Property(e => e.Endereco).IsUnicode(false);
             entity.Property(e => e.Nome).IsUnicode(false);
             entity.Property(e => e.Telefone)
                 .HasMaxLength(15)
@@ -193,7 +196,7 @@ public partial class Context : DbContext
 
             entity.ToTable("Profissional");
 
-            entity.Property(e => e.Endereço).IsUnicode(false);
+            entity.Property(e => e.Endereco).IsUnicode(false);
             entity.Property(e => e.Nome).IsUnicode(false);
             entity.Property(e => e.Telefone)
                 .HasMaxLength(15)
